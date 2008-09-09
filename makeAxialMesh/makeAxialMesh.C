@@ -403,6 +403,7 @@ int main(int argc, char *argv[])
     argList::validOptions.insert("axis","<axis face name>");
     argList::validOptions.insert("wedge","<wedge face  name>");
     argList::validOptions.insert("offset","<additional offset from axis>");
+    argList::validOptions.insert("overwrite", "");
   
 #   include "setRootCase.H"
 #   include "createTime.H"
@@ -427,6 +428,8 @@ int main(int argc, char *argv[])
     scalar offset=0;
 
     vector rotation(0,0,0),origin(0,0,0);
+
+    bool overwrite = args.options().found("overwrite");
 
     if(args.options().found("axis") && args.options().found("wedge")) {
       oldMode=true;
@@ -549,8 +552,11 @@ int main(int argc, char *argv[])
 
     changeTypes(mesh,wedgeName,axisName,distance>SMALL);
 
-    runTime++;
-    
+    if (!overwrite)
+    {
+        runTime++;
+    }
+
     Info << "Writing mesh to time " << runTime.value() << endl;
     mesh.write();
 
