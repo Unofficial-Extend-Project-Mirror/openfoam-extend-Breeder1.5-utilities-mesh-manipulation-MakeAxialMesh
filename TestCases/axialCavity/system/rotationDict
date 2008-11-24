@@ -35,4 +35,6 @@ makeAxialOffset 0.05;
 rotationVector (1 0 0);
 originVector (0 0.15 0);
 
+wedgeAngle 45;
+
 // ************************************************************************* //
