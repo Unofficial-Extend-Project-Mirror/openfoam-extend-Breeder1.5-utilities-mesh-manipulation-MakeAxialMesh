@@ -136,7 +136,7 @@ scalar getDistance(const polyPatch &axisPatch,linie &axisLine) {
 }
 
 // angle (as suggested in the OpenFOAM-Userguide)
-const scalar angle=2.5;   //DPS the plane is rotated +2.5 degrees and -2.5 degrees to make a 5 deg. wedge
+const scalar defaultAngle=5;   //DPS the plane is rotated +2.5 degrees and -2.5 degrees to make a 5 deg. wedge
 
 // changes the coordinates of the points
 
@@ -167,7 +167,15 @@ const scalar angle=2.5;   //DPS the plane is rotated +2.5 degrees and -2.5 degre
 
 */
 
-void changeCoordinates(polyMesh &mesh,plane cutPlane,linie &axisLine,scalar offset) {
+void changeCoordinates(
+    polyMesh &mesh,
+    plane cutPlane,
+    linie &axisLine,
+    scalar offset,
+    const scalar wedgeAngle) 
+{
+  const scalar angle=wedgeAngle/2;
+
   repatchPolyTopoChanger topo(mesh);
 
   pointField oldPoints=mesh.points();                //DPS the old points will be rotated too
@@ -404,6 +412,7 @@ int main(int argc, char *argv[])
     argList::validOptions.insert("wedge","<wedge face  name>");
     argList::validOptions.insert("offset","<additional offset from axis>");
     argList::validOptions.insert("overwrite", "");
+    argList::validOptions.insert("wedgeAngle","<degrees>");
   
 #   include "setRootCase.H"
 #   include "createTime.H"
@@ -426,6 +435,7 @@ int main(int argc, char *argv[])
     bool oldMode=false;
 
     scalar offset=0;
+    scalar wedgeAngle=defaultAngle;
 
     vector rotation(0,0,0),origin(0,0,0);
 
@@ -479,7 +489,15 @@ int main(int argc, char *argv[])
                     << exit(FatalError);	
         }
     
+        if(rotationalDict.found("wedgeAngle")) {
+	    wedgeAngle=readScalar(rotationalDict["wedgeAngle"]);
+        }
     }
+
+    if(args.options().found("wedgeAngle")) {
+	wedgeAngle=readScalar(IStringStream(args.options()["wedgeAngle"])());
+    }
+
     if(offset<0) {
       FatalErrorIn(args.executable())
 	<< "Offset " << offset << " smaller than 0" << endl
@@ -525,9 +543,15 @@ int main(int argc, char *argv[])
     
     Info << "The rotation-axis: " << theAxis << "\n" << endl;
 
-    Info << "Creating wedge with an opening angle of " << angle << " degrees\n" << endl;
+    Info << "Creating wedge with an opening angle of " << wedgeAngle << " degrees\n" << endl;
 
-    changeCoordinates(mesh,approx,theAxis,offset);
+    changeCoordinates(
+        mesh,
+        approx,
+        theAxis,
+        offset,
+        wedgeAngle
+    );
 
     scalar distance=offset;
 
