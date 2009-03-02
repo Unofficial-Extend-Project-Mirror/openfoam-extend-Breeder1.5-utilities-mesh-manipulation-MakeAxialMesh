@@ -164,6 +164,9 @@ const scalar defaultAngle=5;   //DPS the plane is rotated +2.5 degrees and -2.5 
             direction of "axisLine", "axisDir".    
         "radius" is the radial coordinate of the cartesian point, in the plane
             perpendicular to the rotation axis.
+	"radiusBasedPoint" is the basePoint coordinates relative to the axisPoint.
+	    It is used if revolve = true to intruduce the factorRadius in order to
+	    revolve the mesh instead of projecting it on wedges
 
 */
 
@@ -172,8 +175,11 @@ void changeCoordinates(
     plane cutPlane,
     linie &axisLine,
     scalar offset,
-    const scalar wedgeAngle) 
+    const scalar wedgeAngle,
+    bool revolve) 
 {
+  if (revolve)    Info << "Revolving nodes" << endl;
+  else 		  Info << "Projecting nodes" << endl;
   const scalar angle=wedgeAngle/2;
 
   repatchPolyTopoChanger topo(mesh);
@@ -182,6 +188,7 @@ void changeCoordinates(
   pointField newPoints(oldPoints.size());
 
   const scalar factor=std::sin(angle/180.*mathematicalConstant::pi);
+  const scalar factorRadius=std::cos(angle/180.*mathematicalConstant::pi);
   vector axisDir = axisLine.vec()/axisLine.mag();      
 
   scalar minRadius=1e10,maxRadius=-1e10;
@@ -203,6 +210,7 @@ void changeCoordinates(
 
     point axisPoint = axisLine.start() + axisDir * (axisDir & (basePoint-axisLine.start()));
     radius=mag( axisPoint - basePoint )+offset;
+    point radiusBasedPoint = factorRadius * (basePoint - axisPoint);
 
     if(radius>maxRadius) {
         maxRadius=radius;
@@ -211,7 +219,10 @@ void changeCoordinates(
         minRadius=radius;
     }
     vector dir(oldPoint-basePoint);
-    newPoints[pointI] = basePoint + factor *radius * dir/mag(dir);
+    if(revolve) {
+        newPoints[pointI] = axisPoint + radiusBasedPoint + factor * radius * dir/mag(dir);
+    }
+    else newPoints[pointI] = basePoint + factor * radius * dir/mag(dir);
     //    oldPoints[pointI] = basePoint - factor *radius * dir/mag(dir);  //DPS rotating original plane
   }
 
@@ -413,6 +424,7 @@ int main(int argc, char *argv[])
     argList::validOptions.insert("offset","<additional offset from axis>");
     argList::validOptions.insert("overwrite", "");
     argList::validOptions.insert("wedgeAngle","<degrees>");
+    argList::validOptions.insert("revolve","");
   
 #   include "setRootCase.H"
 #   include "createTime.H"
@@ -433,6 +445,7 @@ int main(int argc, char *argv[])
     word wedgeName;
 
     bool oldMode=false;
+    bool revolve = args.options().found("revolve");
 
     scalar offset=0;
     scalar wedgeAngle=defaultAngle;
@@ -466,6 +479,8 @@ int main(int argc, char *argv[])
 	    IOobject::NO_WRITE
 	    )
 	   );
+        
+	revolve = readBool(rotationalDict.lookup("revolve"));
 
 	if(rotationalDict.found("makeAxialOldMode") &&
 	   readBool(rotationalDict.lookup("makeAxialOldMode"))) {
@@ -550,7 +565,8 @@ int main(int argc, char *argv[])
         approx,
         theAxis,
         offset,
-        wedgeAngle
+        wedgeAngle,
+	revolve
     );
 
     scalar distance=offset;
