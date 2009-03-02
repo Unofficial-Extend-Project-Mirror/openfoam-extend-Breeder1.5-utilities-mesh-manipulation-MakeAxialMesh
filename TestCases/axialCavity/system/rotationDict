@@ -35,6 +35,11 @@ makeAxialOffset 0.05;
 rotationVector (1 0 0);
 originVector (0 0.15 0);
 
-wedgeAngle 45;
+wedgeAngle 5;
+
+// revolve option
+// 0 = old and default mode, points are projected on wedges
+// 1 = points are revolved
+revolve 0;
 
 // ************************************************************************* //
