@@ -1,5 +1,10 @@
+ifdef FOAM_DEV
+FOAM_DEV_OPTION = -DFOAM_DEV
+endif
+
 EXE_INC = \
-       -I$(LIB_SRC)/dynamicMesh/lnInclude \
+         $(FOAM_DEV_OPTION)      \
+        -I$(LIB_SRC)/dynamicMesh/lnInclude \
  	-I$(LIB_SRC)/cfdTools/lnInclude\
 	-I$(LIB_SRC)/meshTools/lnInclude
 
